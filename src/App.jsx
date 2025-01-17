@@ -1,7 +1,8 @@
 import React, { useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import "./App.css";
 
-const UserCard = ({ fname, lname, age, profession, gender, bio, onEdit, onDelete }) => {
+const UserCard = ({ id, fname, lname, age, profession, gender, bio, onEdit, onDelete }) => {
   return (
     <div className="user-card">
       <div className="card-header"></div>
@@ -17,8 +18,8 @@ const UserCard = ({ fname, lname, age, profession, gender, bio, onEdit, onDelete
           Age: {age} | Gender: {gender}
         </p>
         <p className="card-bio">{bio}</p>
-        <button className="card-button" onClick={onEdit}>Edit</button>
-        <button className="card-button delete-button" onClick={onDelete}>Delete</button>
+        <button className="card-button" onClick={() => onEdit(id)}>Edit</button>
+        <button className="card-button delete-button" onClick={() => onDelete(id)}>Delete</button>
       </div>
     </div>
   );
@@ -26,7 +27,7 @@ const UserCard = ({ fname, lname, age, profession, gender, bio, onEdit, onDelete
 
 const UserList = () => {
   const [users, setUsers] = useState([
-    { fname: "John", lname: "Doe", age: 30, profession: "Engineer", gender: "Male", bio: "Loves coding and hiking." }
+    { id: uuidv4(), fname: "John", lname: "Doe", age: 30, profession: "Engineer", gender: "Male", bio: "Loves coding and hiking." }
   ]);
   const [showPopup, setShowPopup] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -37,7 +38,7 @@ const UserList = () => {
     gender: "",
     bio: ""
   });
-  const [editIndex, setEditIndex] = useState(null);
+  const [editId, setEditId] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -45,38 +46,40 @@ const UserList = () => {
   };
 
   const handleAddUser = () => {
-    if (editIndex !== null) {
-      const updatedUsers = [...users];
-      updatedUsers[editIndex] = newUser;
+    if (editId !== null) {
+      const updatedUsers = users.map((user) =>
+        user.id === editId ? { ...user, ...newUser } : user
+      );
       setUsers(updatedUsers);
-      setEditIndex(null);
+      setEditId(null);
     } else {
-      setUsers([...users, newUser]);
+      setUsers([...users, { id: uuidv4(), ...newUser }]);
     }
     setNewUser({ fname: "", lname: "", age: "", profession: "", gender: "", bio: "" });
     setShowPopup(false);
   };
 
-  const handleEditUser = (index) => {
-    setEditIndex(index);
-    setNewUser(users[index]);
+  const handleEditUser = (id) => {
+    const userToEdit = users.find((user) => user.id === id);
+    setEditId(id);
+    setNewUser(userToEdit);
     setShowPopup(true);
   };
 
-  const handleDeleteUser = (index) => {
-    const updatedUsers = users.filter((_, i) => i !== index);
+  const handleDeleteUser = (id) => {
+    const updatedUsers = users.filter((user) => user.id !== id);
     setUsers(updatedUsers);
   };
 
   return (
     <div>
       <div className="user-list">
-        {users.map((user, index) => (
+        {users.map((user) => (
           <UserCard
-            key={index}
+            key={user.id}
             {...user}
-            onEdit={() => handleEditUser(index)}
-            onDelete={() => handleDeleteUser(index)}
+            onEdit={handleEditUser}
+            onDelete={handleDeleteUser}
           />
         ))}
       </div>
@@ -87,7 +90,7 @@ const UserList = () => {
       {showPopup && (
         <div className="popup-overlay">
           <div className="popup">
-            <h2>{editIndex !== null ? "Edit User" : "Add New User"}</h2>
+            <h2>{editId !== null ? "Edit User" : "Add New User"}</h2>
             <input
               type="text"
               name="fname"
@@ -130,7 +133,7 @@ const UserList = () => {
               onChange={handleInputChange}
             ></textarea>
             <button className="popup-button" onClick={handleAddUser}>
-              {editIndex !== null ? "Save Changes" : "Add"}
+              {editId !== null ? "Save Changes" : "Add"}
             </button>
             <button className="popup-button" onClick={() => setShowPopup(false)}>
               Cancel
